@@ -21,6 +21,8 @@
  */
 package org.hibernate.eclipse.console.views;
 
+import java.util.Set;
+
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.IMenuManager;
@@ -35,6 +37,7 @@ import org.eclipse.ui.actions.SelectionListenerAction;
 import org.hibernate.console.ConsoleConfiguration;
 import org.hibernate.eclipse.console.actions.AddConfigurationAction;
 import org.hibernate.eclipse.console.actions.CloseConfigAction;
+import org.hibernate.eclipse.console.actions.ConsoleConfigReadyUseBaseAction;
 import org.hibernate.eclipse.console.actions.CriteriaEditorAction;
 import org.hibernate.eclipse.console.actions.DeleteConfigurationAction;
 import org.hibernate.eclipse.console.actions.EditConsoleConfiguration;
@@ -43,6 +46,7 @@ import org.hibernate.eclipse.console.actions.OpenMappingAction;
 import org.hibernate.eclipse.console.actions.OpenSourceAction;
 import org.hibernate.eclipse.console.actions.RefreshAction;
 import org.hibernate.eclipse.console.actions.RenameAction;
+import org.hibernate.eclipse.console.extensionpoint.ConfigurationActionsContributionHandler;
 import org.jboss.tools.hibernate.runtime.spi.IPersistentClass;
 import org.jboss.tools.hibernate.runtime.spi.IProperty;
 
@@ -91,6 +95,7 @@ public class ConfigurationsViewActionGroup extends ActionGroup {
 	private SelectionListenerAction openMappingAction;
 	private SelectionListenerAction openSourceAction;
 	private SelectionListenerAction renameAction;
+	private Set<ConsoleConfigReadyUseBaseAction> extensionActions;
 
 	public ConfigurationsViewActionGroup(IViewPart part, StructuredViewer selectionProvider) {
 		
@@ -134,6 +139,13 @@ public class ConfigurationsViewActionGroup extends ActionGroup {
 		
 		renameAction = new RenameAction(selectionProvider);
 		selectionProvider.addSelectionChangedListener(renameAction);
+		
+		ConfigurationActionsContributionHandler contributionsHandler = new ConfigurationActionsContributionHandler(selectionProvider);
+		this.extensionActions = contributionsHandler.getExtensions();
+		for (ConsoleConfigReadyUseBaseAction action : this.extensionActions) {
+			selectionProvider.addSelectionChangedListener(action);
+		}
+		
 	}
 
 	public void dispose() {
@@ -146,6 +158,9 @@ public class ConfigurationsViewActionGroup extends ActionGroup {
 		selectionProvider.removeSelectionChangedListener(editConfigurationAction);
 		selectionProvider.removeSelectionChangedListener(hqlEditorAction);
 		selectionProvider.removeSelectionChangedListener(criteriaEditorAction);
+		for (ConsoleConfigReadyUseBaseAction action : this.extensionActions) {
+			selectionProvider.removeSelectionChangedListener(action);
+		}
 	}
 	
 	public void fillContextMenu(IMenuManager menu) {
@@ -181,6 +196,9 @@ public class ConfigurationsViewActionGroup extends ActionGroup {
 		if (first != null && (first instanceof IPersistentClass || (first instanceof IProperty && ((IProperty)first).classIsPropertyClass()))) {			
 			menu.appendToGroup(GROUP_OTHER_EDITORS, openSourceAction);
 			menu.appendToGroup(GROUP_OTHER_EDITORS, openMappingAction);
+		}
+		for (ConsoleConfigReadyUseBaseAction action : this.extensionActions) {
+			menu.appendToGroup(GROUP_OTHER_EDITORS, action);
 		}
 		menu.add(new GroupMarker(GROUP_OTHER_EDITORS_LAST));
 	}

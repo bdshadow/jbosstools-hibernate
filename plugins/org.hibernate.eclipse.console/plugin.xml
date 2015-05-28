@@ -2,6 +2,7 @@
 <?eclipse version="3.0"?>
 <plugin>
    <extension-point id="exporters" name="Hibernate Console Exporter" schema="schema/exporters.exsd"/>
+   <extension-point id="actions" name="Hibernate Console Configurations" schema="schema/actions.exsd"/>
 
      <extension
          point="org.eclipse.ui.perspectives">
